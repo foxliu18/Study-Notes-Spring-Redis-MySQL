@@ -90,15 +90,171 @@ Redis是C语言写的,完全不比同样使用key-value的Memcached差
 
 ### String
 
+底层存储结构：简单动态字符串（SDS）
+
+1. 能转整数的：int
+2. 小于等于44字节：embstr
+3. 大于44字节： raw
+
+使用场景： 
+
++ 单值缓存：SET key value; GET key
+
++ 对象缓存: 
+
+  1. SET user:1 value(json数据)
+
+  2. MSET user:1:name zhunge user:1:balance 1888
+
+      MGET user:1:name user:1:balance
+
++ 分布式锁
+
+  SETNX product:10001 true    //返回1代表获取锁成功
+
+  SETNX product:10001 true   //其他线程获取锁返回0，表示失败
+
+  ... 执行业务...
+
+  DEL product:10001                //执行完业务释放锁
+
+  SET product:10001 true ex 10 nx      //防止程序一万终止导致死锁，增加锁有效期，为防止意外超时，可以增加自动锁续命，redisson有实现
+
++ 计数器
+
+  INCR article：readcount:{文章id}
+
+  GET article：readcount:{文章id}     //记录点阅次数
+
++ 分布式系统全局序列号
+
+  INCRBY orderId 100       //redis批量生成序列号提升性能能，用于存在分库分表数据库自增id
+
+  
+
 ### List
+
+底层存储结构：
+
+			1. 压缩列表
+   			2. 双向链表
+
++ List常用操作
+
+  LPUSH key value [value...]  //一个或多个值插入到list头（左）
+
+  RPUSH key value [value...]  //一个或多个值插入到list尾（右）
+
+  LPOP key                              //移除并返回key列表的头元素
+
+  RPOP key                              //移除并返回key列表的尾元素
+
+  LRANGE key start stop          //返回key表指定区间内元素，偏移量start-end
+
+  BLPOP key [key...] timeout   //从表头弹出一个元素，如果没有阻塞等待timeout秒。如果timeout=0则一直等待
+
+  BRPOP key [key...] timeout   //从表尾弹出一个元素，如果没有阻塞等待timeout秒。如果timeout=0则一直等待
+
++ 重用数据结构
+
+  Stack = LPUSH + LPOP
+
+  Queue = LPUSH + RPOP
+
+  Blocking MQ = LPUSH + BRPOP
 
 ### Set
 
-### Hash
+底层存储结构：
+
+1. 哈希表
+2. 整数数组
+
++ Set常用操作
+
+  SADD key member [member...]     //往集合key中存入元素，元素存在则忽略，key不存在则新建
+
+  SREM key member [member...]      //从集合key中删除元素
+
+  SMEMBERS key                                 //获取集合key中所有元素
+
+  SCARD key                                         //获取集合key的元素个数
+
+  SISMEMBER key member                 //判断member元素是否存在集合key中
+
+  SRANDMEMBER key [count]             //从集合key中选出count个元素，元素不从key中删除
+
+  SPOP key [count]                              //从集合key中选出count个元素，元素从key中删除
+
++ Set运算操作
+
+  SINTER key [key...]               //交集运算
+
+  SINTERSTORE destination key [key...]      //将交集结果存入新集合destination中
+
+  SUNION key [key...]     //并集运算
+
+  SUNIONSTORE destination key [key...]      //将并集结果存入新集合destination中
+
+  SDIFF key [key...]                                           //差集运算
+
+  SDIFFSTORE destination key [key...]             //将差集结果存入新集合destination中 
+
+###  Hash
+
+底层存储结构：
+
+1. 哈希表
+2. 压缩列表
+
++ 对象缓存：
+
+  HMSET user {userId}:name zhuge {userId}:balance 1888
+
+  HMSET user 1:name zhuge 1:balance 1888
+
+  HMGET user 1:name 1:balance
+
+==优点==
+
+1. 同类数据归类整合存储，方便数据管理
+2. 相比string操作消耗内存与CPU更小
+
+==缺点==
+
+1. 过期功能不能使在field（对象字段）上，只能用在key上（对象key）
+2. Redis集群架构下不适合大规模使用
 
 ### Zset
 
-## 事务
+底层存储结构：
+
+1. 压缩列表
+2. 跳表
+
++ Zset常用操作
+
+  ZADD key score member [[score member] ...]    //往有序集合key中加入带分值元素
+
+  ZREM key member [member ...]             //从有序集合key中删除元素
+
+  ZSCORE key member                              //返回有序集合key中元素member的分值
+
+  ZINCRBY key increment member           //为有序集合key中元素member的分值加上increment
+
+  ZCARD key                                            //返回有序集合key中元素个数
+
+  ZRANGE key start stop [WITHSCORES]          //正序获取有序集合key从start到stop下标的元素
+
+  ZREVRANGE key start stop [WITHSCORES]    //倒序获取有序集合key从start到stop下标的元素
+
++ Zset集合操作
+
+  ZUNIONSTORE destkey numkeys key [key ...]    //并集计算
+
+  ZINTERSTORE destkey numkeys key [key ...]     //交集计算
+
+##  事务
 
 MySql ACID
 
