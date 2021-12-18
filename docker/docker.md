@@ -3,23 +3,23 @@
 mysql
 
 ``` bash
-docker run -id 
--p 3307:3306 
---name=c_mysql 
--v $PWD/mysql/conf:/etc/mysql/conf.d 
--v $PWD/mysql/logs:/logs 
--v $PWD/mysql/data:/var/lib/mysql 
--e MYSQL_ROOT_PASSWORD=1234 
+docker run -id \
+-p 3307:3306 \
+--name=c_mysql \
+-v $PWD/mysql/conf:/etc/mysql/conf.d \
+-v $PWD/mysql/logs:/logs \
+-v $PWD/mysql/data:/var/lib/mysql \
+-e MYSQL_ROOT_PASSWORD=1234 \
 mysql
 ```
 
 tomcat
 
 ``` bash
-docker run -id 
---name=c_tomcat 
--p 8080:8080 
--v $PWD:/usr/local/tomcat/webapps 
+docker run -id \
+--name=c_tomcat \
+-p 8080:8080 \
+-v $PWD:/usr/local/tomcat/webapps \
 tomcat
 ```
 
@@ -48,6 +48,23 @@ docker run -id
 
 
 ## dockerfile
+
+镜像加速
+
+``` shell
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": ["https://05uka7y2.mirror.aliyuncs.com"]
+}
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+```
+
+
+
+
 
 ### docker镜像原理
 
